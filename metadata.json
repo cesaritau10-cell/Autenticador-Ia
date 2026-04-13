@@ -1,0 +1,6 @@
+{
+  "name": "AI Authenticator",
+  "description": "Aplicativo para analisar fotos e vídeos e identificar se foram gerados por inteligência artificial.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}
