@@ -1,8 +1,14 @@
 import { GoogleGenAI } from '@google/genai';
 
-// Initialize the Gemini API client
-// The API key is automatically injected by AI Studio
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+// Initialize the Gemini API client.
+// The key is injected at build time by Vite via `define` in vite.config.ts.
+const API_KEY = process.env.GEMINI_API_KEY;
+
+export const isApiKeyConfigured = (): boolean => {
+  return Boolean(API_KEY) && API_KEY !== 'MY_GEMINI_API_KEY';
+};
+
+const ai = new GoogleGenAI({ apiKey: API_KEY ?? '' });
 
 export interface AnalysisResult {
   probabilityScore: number;
@@ -10,7 +16,17 @@ export interface AnalysisResult {
   findings: string[];
 }
 
+export class MissingApiKeyError extends Error {
+  constructor() {
+    super('GEMINI_API_KEY não está configurada.');
+    this.name = 'MissingApiKeyError';
+  }
+}
+
 export async function analyzeImage(file: File): Promise<AnalysisResult> {
+  if (!isApiKeyConfigured()) {
+    throw new MissingApiKeyError();
+  }
   try {
     // Convert File to base64
     const base64Data = await new Promise<string>((resolve, reject) => {
