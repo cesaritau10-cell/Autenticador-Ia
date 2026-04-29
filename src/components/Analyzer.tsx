@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
-import { Upload, Image as ImageIcon, Loader2, AlertTriangle, CheckCircle, Info } from 'lucide-react';
-import { analyzeImage, AnalysisResult } from '../lib/gemini';
+import { Upload, Image as ImageIcon, Loader2, AlertTriangle, CheckCircle, Info, KeyRound } from 'lucide-react';
+import { analyzeImage, AnalysisResult, isApiKeyConfigured, MissingApiKeyError } from '../lib/gemini';
 
 export function Analyzer() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -46,8 +46,15 @@ export function Analyzer() {
       const analysisResult = await analyzeImage(selectedFile);
       setResult(analysisResult);
     } catch (err) {
-      setError('Ocorreu um erro ao analisar a imagem. Tente novamente.');
-      console.error(err);
+      if (err instanceof MissingApiKeyError) {
+        setError(
+          'GEMINI_API_KEY não configurada. Adicione a variável de ambiente nas configurações do projeto para ativar a análise.'
+        );
+      } else {
+        const message = err instanceof Error ? err.message : 'Erro desconhecido.';
+        setError(`Ocorreu um erro ao analisar a imagem: ${message}`);
+      }
+      console.error('[v0] Analysis error:', err);
     } finally {
       setIsAnalyzing(false);
     }
@@ -71,6 +78,29 @@ export function Analyzer() {
         <h2 className="text-3xl font-bold tracking-tight text-gray-900">Analisador Visual</h2>
         <p className="text-gray-500">Faça o upload de uma imagem para verificar sinais de geração por IA.</p>
       </div>
+
+      {!isApiKeyConfigured() && (
+        <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3">
+          <KeyRound className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+          <div className="text-sm text-amber-900">
+            <p className="font-semibold">Configuração necessária</p>
+            <p className="mt-1">
+              A variável <code className="bg-amber-100 px-1 py-0.5 rounded">GEMINI_API_KEY</code> não está
+              definida. A interface está funcionando, mas a análise só ficará disponível após adicionar a
+              chave nas variáveis de ambiente do projeto. Obtenha uma chave em{' '}
+              <a
+                href="https://aistudio.google.com/apikey"
+                target="_blank"
+                rel="noreferrer"
+                className="underline font-medium hover:text-amber-700"
+              >
+                aistudio.google.com/apikey
+              </a>
+              .
+            </p>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* Upload Section */}
